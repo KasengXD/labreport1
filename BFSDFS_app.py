@@ -157,7 +157,7 @@ def search(graph, start, goal=None, method='BFS'):
 
 
 # ==============================================================================
-# 3. GRAPH VISUALIZATION (CLEAR PATHS & CURVED EDGES)
+# 3. GRAPH VISUALIZATION (FIXED EDGE CURVATURE)
 # ==============================================================================
 
 def draw_graph(graph_dict, result, step, goal_node=None):
@@ -169,7 +169,6 @@ def draw_graph(graph_dict, result, step, goal_node=None):
 
     fig, ax = plt.subplots(figsize=(7.5, 4.8))
 
-    # Kamada-Kawai layout distributes nodes evenly across space
     try:
         pos = nx.kamada_kawai_layout(g)
     except Exception:
@@ -210,16 +209,35 @@ def draw_graph(graph_dict, result, step, goal_node=None):
 
     nx.draw_networkx_labels(g, pos, ax=ax, font_weight='bold', font_size=11)
 
-    # Draw curved edges so cycle/opposite arrows never overlap
-    nx.draw_networkx_edges(
-        g, pos, ax=ax,
-        edge_color='#64748b',
-        width=1.3,
-        arrows=True,
-        arrowsize=18,
-        connectionstyle='arc3, rad=0.15',  # Curved arrows prevent path overlap
-        min_target_margin=22               # Arrowheads stop cleanly outside node circles
-    )
+    # Separate 1-way (straight) edges and 2-way reciprocal (curved) edges
+    straight_edges = [(u, v) for u, v in g.edges() if not g.has_edge(v, u)]
+    curved_edges = [(u, v) for u, v in g.edges() if g.has_edge(v, u)]
+
+    # 1. Draw 1-way edges as straight lines (rad=0) to avoid bowing into adjacent nodes
+    if straight_edges:
+        nx.draw_networkx_edges(
+            g, pos, ax=ax,
+            edgelist=straight_edges,
+            edge_color='#64748b',
+            width=1.3,
+            arrows=True,
+            arrowsize=18,
+            connectionstyle='arc3, rad=0',      # Straight lines for 1-way edges
+            min_target_margin=22
+        )
+
+    # 2. Draw 2-way reciprocal edges with curves (rad=0.2) so opposing arrows don't overlap
+    if curved_edges:
+        nx.draw_networkx_edges(
+            g, pos, ax=ax,
+            edgelist=curved_edges,
+            edge_color='#64748b',
+            width=1.3,
+            arrows=True,
+            arrowsize=18,
+            connectionstyle='arc3, rad=0.2',    # Curve only when reciprocal cycle exists
+            min_target_margin=22
+        )
 
     # Highlight target goal node if specified
     if goal_node and goal_node in g.nodes():
@@ -258,7 +276,7 @@ except ValueError as exc:
 
 # --- Main Content Header ---
 st.title('BFS & DFS | Interactive Uninformed Search Algorithms')
-st.caption('BSD3513 Artificial Intelligence · Lab Report 1 · Mok Ker Qin · Breath First Search & Depth First Search · Alphabetical tie-breaking · UMPSA')
+st.caption('BSD3513 Artificial Intelligence · Lab Report 1 · WONG KA SENG · Breath First Search & Depth First Search · Alphabetical tie-breaking · UMPSA')
 
 with st.expander('Learning guide', expanded=False):
     st.markdown('**BFS** explores level by level using a FIFO queue; **DFS** explores deeply using a LIFO stack. For adjacency-list implementations both require **O(V + E)** time. BFS finds minimum-hop paths in unweighted graphs; DFS does not guarantee this.')
