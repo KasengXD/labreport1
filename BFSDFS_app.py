@@ -107,7 +107,7 @@ DEFAULT_EDGES = '\n'.join(
 
 st.set_page_config(page_title='BSD3513 | BFS & DFS Lab#1', page_icon='', layout='wide')
 st.title('BFS & DFS | Interactive Uninformed Search Algorithms')
-st.caption('BSD3513 Artificial Intelligence · Assoc. Prof. Dr. Ku Muhammad Naim Ku Khalif · Breath First Search  & Depth First Search · Alphabetical tie-breaking · UMPSA')
+st.caption('BSD3513 Artificial Intelligence · Assoc. Prof. Dr. Ku Muhammad Naim Ku Khalif · Breath First Search & Depth First Search · Alphabetical tie-breaking · UMPSA')
 
 with st.expander('Learning guide', expanded=False):
     st.markdown('**BFS** explores level by level using a FIFO queue; **DFS** explores deeply using a LIFO stack. For adjacency-list implementations both require **O(V + E)** time. BFS finds minimum-hop paths in unweighted graphs; DFS does not guarantee this.')
@@ -138,11 +138,36 @@ def draw_graph(result, step):
         g.add_node(node)
         for neighbor in neighbors:
             g.add_edge(node, neighbor)
-    fig, ax = plt.subplots(figsize=(7, 4.5))
-    pos = nx.spring_layout(g, seed=12)
+
+    fig, ax = plt.subplots(figsize=(8, 5.5))
+
+    # Kamada-Kawai layout distributes nodes evenly across the space
+    pos = nx.kamada_kawai_layout(g)
+
     seen = result['trace'][step - 1]['visited']
-    colors = ['#10b981' if n == result['trace'][step - 1]['current'] else '#93c5fd' if n in seen else '#e5e7eb' for n in g.nodes]
-    nx.draw_networkx(g, pos, ax=ax, with_labels=True, node_color=colors, node_size=950, font_weight='bold', arrows=True, arrowsize=19, edge_color='#64748b')
+    current_node = result['trace'][step - 1]['current']
+
+    colors = [
+        '#10b981' if n == current_node 
+        else '#93c5fd' if n in seen 
+        else '#e5e7eb' 
+        for n in g.nodes
+    ]
+
+    # Draw nodes and labels
+    nx.draw_networkx_nodes(g, pos, ax=ax, node_color=colors, node_size=1100)
+    nx.draw_networkx_labels(g, pos, ax=ax, font_weight='bold', font_size=11)
+
+    # Draw curved edges with padding so arrows remain visible
+    nx.draw_networkx_edges(
+        g, pos, ax=ax,
+        edge_color='#64748b',
+        arrows=True,
+        arrowsize=18,
+        connectionstyle='arc3, rad=0.15',  # Curved arrows prevent edge overlap
+        min_target_margin=22               # Prevents arrows from being cut off by nodes
+    )
+
     ax.axis('off')
     return fig
 
