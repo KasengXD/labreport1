@@ -1,4 +1,4 @@
-Interactive BFS & DFS Search Visualizer
+## Interactive BFS & DFS Search Visualizer
 
 An interactive web application built with **Streamlit**, **NetworkX**, and **Matplotlib** to demonstrate and compare **Breadth-First Search (BFS)** and **Depth-First Search (DFS)** algorithms step-by-step on customizable directed graphs.
 
