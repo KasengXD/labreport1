@@ -6,24 +6,29 @@ Created for **BSD3513 Artificial Intelligence — Lab Report 1** at **Universiti
 
 ---
 
+🌐 Live Application
+Access the deployed interactive web application directly in your browser:
+
+👉 https://labreport1sd24037.streamlit.app/
+
+---
+
 ## 📸 Screenshots & Showcase
 
-### Main Interface Cover
+### Main Interface
+
+![Application Cover](Screenshot%202026-10-18%20135641.png)
 
 ### Algorithm Visualizations & Tree Views
 
 | Search Execution | Search Tree View |
-| --- | --- |
-| **BFS Execution**<br>
+| :---: | :---: |
+| **BFS Execution**<br>![BFS View](Screenshot%202026-10-18%20140108.png) | **BFS Tree View**<br>![BFS Tree View](image.png) |
+| **DFS Execution**<br>![DFS View](Screenshot%202026-10-18%20141410.png) | **DFS Tree View & Explanation**<br>![DFS Explanation Tree View](Screenshot%202026-10-18%20141612.png) |
 
-<br> | **BFS Tree View**<br>
+### Algorithm Comparison Table
 
-<br> |
-| **DFS Execution**<br>
-
-<br> | **DFS Tree View & Explanation**<br>
-
-<br> |
+![Comparison Table](Screenshot%202026-10-18%20141655.png)
 
 ### Algorithm Comparison Table
 
