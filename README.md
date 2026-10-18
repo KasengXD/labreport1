@@ -6,6 +6,29 @@ Created for **BSD3513 Artificial Intelligence — Lab Report 1** at **Universiti
 
 ---
 
+## 📸 Screenshots & Showcase
+
+### Main Interface Cover
+
+### Algorithm Visualizations & Tree Views
+
+| Search Execution | Search Tree View |
+| --- | --- |
+| **BFS Execution**<br>
+
+<br> | **BFS Tree View**<br>
+
+<br> |
+| **DFS Execution**<br>
+
+<br> | **DFS Tree View & Explanation**<br>
+
+<br> |
+
+### Algorithm Comparison Table
+
+---
+
 ## 📌 Overview
 
 This tool provides a complete educational sandbox for understanding uninformed search strategies. Users can input custom directed graphs or use built-in defaults, select start and goal nodes, and observe how BFS and DFS traverse the graph, expand frontiers, build search trees, and identify optimal paths.
