@@ -2,7 +2,7 @@
 
 An interactive web application built with **Streamlit**, **NetworkX**, and **Matplotlib** to demonstrate and compare **Breadth-First Search (BFS)** and **Depth-First Search (DFS)** algorithms step-by-step on customizable directed graphs.
 
-**BSD3513 Artificial Intelligence — Lab Report 1** **Wong Ka Seng** **UMPSA**.
+**BSD3513 Artificial Intelligence — Lab Report 1**,**Wong Ka Seng**,**UMPSA**.
 
 ---
 
