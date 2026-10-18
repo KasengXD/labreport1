@@ -182,152 +182,62 @@ def draw_graph(result, step):
     g.add_nodes_from(graph)
     g.add_edges_from((u, v) for u, ns in graph.items() for v in ns)
 
-    # Keep a fixed layout so nodes do not move between search steps.
     default_edges = {(u, v) for u, ns in GRAPH.items() for v in ns}
     if set(g.nodes) == set(GRAPH) and set(g.edges) == default_edges:
-        pos = {
-            'A': (0, 0),
-            'B': (-1.5, 1.1),
-            'C': (1.2, -0.35),
-            'D': (3.0, -0.8),
-            'E': (-3.0, 1.8),
-            'H': (-2.0, 3.0),
-            'G': (0.0, 2.5),
-            'F': (1.0, 3.8)
-        }
+        pos = {'A':(0,0), 'B':(-1,1), 'C':(1,-0.2), 'D':(2,-0.65),
+               'E':(-2,1.5), 'H':(-1.5,2.6), 'G':(0,2), 'F':(0.8,3)}
     else:
-        pos = nx.spring_layout(g, seed=13, k=1.5)
+        pos = nx.spring_layout(g, seed=13)
 
-    item = result['trace'][step - 1]
+    item = result['trace'][step-1]
     visited = set(item['visited'])
-    frontier = set(item['frontier']) - visited
-    current = item['current'].replace(' (skip)', '')
-    skip = item['current'].endswith('(skip)')
+    frontier = set(item['frontier'])-visited
+    raw = item['current']
+    current = raw.replace(' (skip)', '')
+    skip = raw.endswith('(skip)')
 
-    # Node colours indicate the current search state.
-    colors = [
-        '#10b981' if n == current and not skip else
-        '#93c5fd' if n in visited else
-        '#fbbf24' if n in frontier else
-        '#e5e7eb'
-        for n in g.nodes
-    ]
+    colors = ['#10b981' if n == current and not skip else
+              '#93c5fd' if n in visited else
+              '#fbbf24' if n in frontier else '#e5e7eb' for n in g.nodes]
+    borders = ['#dc2626' if goal and n == goal else
+               '#7c3aed' if n == start else '#ffffff' for n in g.nodes]
 
-    borders = [
-        '#dc2626' if goal and n == goal else
-        '#7c3aed' if n == start else '#ffffff'
-        for n in g.nodes
-    ]
+    tree = [(p, c) for c, p in result['parents'].items()
+            if p is not None and p in visited and c in visited]
+    path = list(zip(result['path'], result['path'][1:])) if goal and result['found'] and goal in visited else []
 
-    # Highlight search-tree edges and the final goal path.
-    tree_edges = {
-        (p, n) for n, p in result['parents'].items()
-        if p is not None and p in visited and n in visited
-    }
-    path_edges = (
-        set(zip(result['path'], result['path'][1:]))
-        if goal and result['found'] and goal in visited else set()
-    )
+    fig, ax = plt.subplots(figsize=(8, 4.6), dpi=120)
+    nx.draw_networkx_edges(g, pos, ax=ax, edge_color='#cbd5e1',
+                           width=1.4, arrows=True, arrowsize=18, node_size=850)
+    if tree:
+        nx.draw_networkx_edges(g, pos, ax=ax, edgelist=tree,
+                               edge_color='#0f766e', width=2.4,
+                               arrows=True, arrowsize=20, node_size=850)
+    if path:
+        nx.draw_networkx_edges(g, pos, ax=ax, edgelist=path,
+                               edge_color='#f59e0b', width=3.8,
+                               arrows=True, arrowsize=23, node_size=850)
 
-    fig, ax = plt.subplots(figsize=(9, 5.5), dpi=120)
+    nx.draw_networkx_nodes(g, pos, ax=ax, node_color=colors,
+                           edgecolors=borders, linewidths=2.3, node_size=850)
+    nx.draw_networkx_labels(g, pos, ax=ax, font_size=11, font_weight='bold')
+    ax.set_title(f'{result["method"]} Search | Step {step}/{len(result["trace"])} | Current: {current}',
+                 fontsize=12, fontweight='bold')
 
-    # Curve edges near A, B, C and D to prevent arrows overlapping.
-    curves = {
-        ('A', 'B'): 0.12,
-        ('A', 'D'): -0.12,
-        ('B', 'C'): 0.16,
-        ('C', 'A'): 0.18,
-        ('D', 'C'): 0.18,
-        ('B', 'E'): 0.0,
-        ('B', 'G'): 0.0,
-        ('E', 'H'): 0.0,
-        ('H', 'F'): -0.10,
-        ('H', 'G'): 0.0,
-        ('G', 'F'): 0.0
-    }
-
-    # Draw every directed edge once to avoid doubled arrows.
-    for u, v in g.edges:
-        if (u, v) in path_edges:
-            color, width = '#f59e0b', 3.5
-        elif (u, v) in tree_edges:
-            color, width = '#0f766e', 2.6
-        else:
-            color, width = '#64748b', 1.5
-
-        nx.draw_networkx_edges(
-            g, pos, ax=ax,
-            edgelist=[(u, v)],
-            edge_color=color,
-            width=width,
-            arrows=True,
-            arrowsize=20,
-            node_size=1050,
-            connectionstyle=f'arc3,rad={curves.get((u, v), 0.0)}',
-            min_source_margin=5,
-            min_target_margin=7
-        )
-
-    # Draw nodes after edges so arrows connect neatly to node boundaries.
-    nx.draw_networkx_nodes(
-        g, pos, ax=ax,
-        node_color=colors,
-        edgecolors=borders,
-        linewidths=2.2,
-        node_size=1050
-    )
-
-    nx.draw_networkx_labels(
-        g, pos, ax=ax,
-        font_size=11,
-        font_weight='bold'
-    )
-
-    ax.set_title(
-        f'{result["method"]} Search | Step {step}/{len(result["trace"])}'
-        f' | Current: {current}',
-        fontsize=12,
-        fontweight='bold',
-        pad=15
-    )
-
-    handles = [
-        Line2D([0], [0], marker='o', color='w',
-               label='Current', markerfacecolor='#10b981',
-               markersize=8),
-        Line2D([0], [0], marker='o', color='w',
-               label='Expanded', markerfacecolor='#93c5fd',
-               markersize=8),
-        Line2D([0], [0], marker='o', color='w',
-               label='Frontier', markerfacecolor='#fbbf24',
-               markersize=8),
-        Line2D([0], [0], marker='o', color='w',
-               label='Undiscovered', markerfacecolor='#e5e7eb',
-               markersize=8),
-        Line2D([0], [0], color='#0f766e',
-               lw=2.6, label='Search tree')
-    ]
-
+    handles = [Line2D([0],[0], marker='o', color='w', label=label,
+                      markerfacecolor=color, markersize=8)
+               for label, color in [('Current','#10b981'), ('Expanded','#93c5fd'),
+                                    ('Frontier','#fbbf24'), ('Undiscovered','#e5e7eb')]]
+    handles.append(Line2D([0],[0], color='#0f766e', lw=2.4, label='Search tree'))
     if goal:
-        handles.append(
-            Line2D([0], [0], color='#f59e0b',
-                   lw=3.5, label='Goal path')
-        )
+        handles.append(Line2D([0],[0], color='#f59e0b', lw=3.8, label='Goal path'))
 
-    ax.legend(
-        handles=handles,
-        loc='upper center',
-        bbox_to_anchor=(0.5, -0.03),
-        ncol=3,
-        frameon=False,
-        fontsize=8
-    )
-
-    ax.margins(0.15)
+    ax.legend(handles=handles, loc='upper center', bbox_to_anchor=(0.5,-0.04),
+              ncol=3, frameon=False, fontsize=8)
     ax.axis('off')
-    fig.tight_layout(rect=[0, 0.08, 1, 1])
-
+    fig.tight_layout(rect=[0,0.06,1,1])
     return fig
+
 
 # Feature 5: Draw parent-child relationships as a search tree.
 def draw_search_tree(result, goal):
