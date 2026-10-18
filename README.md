@@ -1,8 +1,8 @@
-# BSD3513 | Interactive BFS & DFS Search Visualizer
+Interactive BFS & DFS Search Visualizer
 
 An interactive web application built with **Streamlit**, **NetworkX**, and **Matplotlib** to demonstrate and compare **Breadth-First Search (BFS)** and **Depth-First Search (DFS)** algorithms step-by-step on customizable directed graphs.
 
-Created for **BSD3513 Artificial Intelligence — Lab Report 1** at **Universiti Malaysia Pahang Al-Sultan Abdullah (UMPSA)**.
+**BSD3513 Artificial Intelligence — Lab Report 1** **Wong Ka Seng** **UMPSA**.
 
 ---
 
@@ -23,7 +23,7 @@ Access the deployed interactive web application directly in your browser:
 
 | Search Execution | Search Tree View |
 | :---: | :---: |
-| **BFS Execution**<br>![BFS View](Screenshot%202026-10-18%20140108.png) | **BFS Tree View**<br>![BFS Tree View](image.png) |
+| **BFS Execution**<br>![BFS View](Screenshot%202026-10-18%20140108.png) | **BFS Tree View & Explanation**<br>![BFS Tree View](image.png) |
 | **DFS Execution**<br>![DFS View](Screenshot%202026-10-18%20141410.png) | **DFS Tree View & Explanation**<br>![DFS Explanation Tree View](Screenshot%202026-10-18%20141612.png) |
 
 ### Algorithm Comparison Table
