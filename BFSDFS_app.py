@@ -47,7 +47,6 @@ def search(graph, start, goal=None, method='BFS'):
             discovered.add(node)
 
         order.append(node)
-
         if node != goal:
             neighbors = graph[node] if method == 'BFS' else list(reversed(graph[node]))
             for nxt in neighbors:
@@ -103,7 +102,11 @@ def reset_defaults():
         del st.session_state[k]
 
 
-# Improved visualization
+def change_step(key, delta, max_step):
+    st.session_state[key] = max(1, min(max_step, st.session_state.get(key, 1) + delta))
+
+
+# Improved graph visualization
 def draw_graph(result, step):
     g = nx.DiGraph()
     g.add_nodes_from(graph)
@@ -118,24 +121,22 @@ def draw_graph(result, step):
 
     item = result['trace'][step-1]
     visited = set(item['visited'])
-    frontier = set(item['frontier'])-visited
+    frontier = set(item['frontier']) - visited
     raw = item['current']
     current = raw.replace(' (skip)', '')
     skip = raw.endswith('(skip)')
 
-    colors = ['#10b981' if n == current and not skip else
-              '#93c5fd' if n in visited else
-              '#fbbf24' if n in frontier else '#e5e7eb' for n in g.nodes]
-    borders = ['#dc2626' if goal and n == goal else
-               '#7c3aed' if n == start else '#ffffff' for n in g.nodes]
+    colors = ['#10b981' if n == current and not skip else '#93c5fd' if n in visited
+              else '#fbbf24' if n in frontier else '#e5e7eb' for n in g.nodes]
+    borders = ['#dc2626' if goal and n == goal else '#7c3aed' if n == start else '#ffffff' for n in g.nodes]
 
     tree = [(p, c) for c, p in result['parents'].items()
             if p is not None and p in visited and c in visited]
     path = list(zip(result['path'], result['path'][1:])) if goal and result['found'] and goal in visited else []
 
     fig, ax = plt.subplots(figsize=(8, 4.8), dpi=120)
-    nx.draw_networkx_edges(g, pos, ax=ax, edge_color='#cbd5e1',
-                           width=1.4, arrows=True, arrowsize=18, node_size=850)
+    nx.draw_networkx_edges(g, pos, ax=ax, edge_color='#cbd5e1', width=1.4,
+                           arrows=True, arrowsize=18, node_size=850)
     if tree:
         nx.draw_networkx_edges(g, pos, ax=ax, edgelist=tree, edge_color='#0f766e',
                                width=2.4, arrows=True, arrowsize=20, node_size=850)
@@ -187,14 +188,15 @@ except ValueError as exc:
 nodes = list(graph)
 if st.session_state.start not in nodes:
     st.session_state.start = nodes[0]
-if st.session_state.goal not in ['No goal']+nodes:
+if st.session_state.goal not in ['No goal'] + nodes:
     st.session_state.goal = 'No goal'
 
 a, b, c = st.columns(3)
 start = a.selectbox('Starting node', nodes, key='start')
-goal_choice = b.selectbox('Goal node (optional)', ['No goal']+nodes, key='goal')
+goal_choice = b.selectbox('Goal node (optional)', ['No goal'] + nodes, key='goal')
 method = c.selectbox('Algorithm', ['Both', 'BFS', 'DFS'], key='method')
 goal = None if goal_choice == 'No goal' else goal_choice
+
 results = {m:search(graph, start, goal, m) for m in (['BFS','DFS'] if method == 'Both' else [method])}
 
 for m, r in results.items():
@@ -208,9 +210,28 @@ for m, r in results.items():
     y.metric('Max frontier', r['max_frontier'])
     z.metric('Goal path edges', len(r['path'])-1 if r['found'] else '—')
 
-    step = st.slider(f'{m}: inspect step', 1, len(r['trace']), len(r['trace']),
-                     key=f'{m}_{len(r["trace"])}')
-    play = st.button(f'▶ Autoplay {m}', key=f'play_{m}')
+    # Button-based step selection instead of a slider
+    step_key = f'{m}_step'
+    st.session_state.setdefault(step_key, 1)
+    st.session_state[step_key] = max(1, min(st.session_state[step_key], len(r['trace'])))
+    current_step = st.session_state[step_key]
+
+    prev_col, info_col, next_col = st.columns([1, 1.25, 1])
+    with prev_col:
+        st.button('◀ Previous', key=f'{m}_prev', disabled=current_step <= 1,
+                  on_click=change_step, args=(step_key, -1, len(r['trace'])), width='stretch')
+    with info_col:
+        st.markdown(
+            f'<div style="text-align:center;padding-top:7px;font-weight:600">'
+            f'Step {current_step} of {len(r["trace"])}</div>',
+            unsafe_allow_html=True
+        )
+    with next_col:
+        st.button('Next ▶', key=f'{m}_next', disabled=current_step >= len(r['trace']),
+                  on_click=change_step, args=(step_key, 1, len(r['trace'])), width='stretch')
+
+    step = st.session_state[step_key]
+    play = st.button(f'▶ Autoplay {m}', key=f'play_{m}', width='stretch')
     left, right = st.columns([1.2, 1])
 
     with left:
@@ -223,11 +244,16 @@ for m, r in results.items():
         fig = draw_graph(r, s)
         graph_box.pyplot(fig, use_container_width=True)
         plt.close(fig)
+
         t = r['trace'][s-1]
         frontier_text = ' → '.join(t['frontier']) if t['frontier'] else 'Empty'
         structure = 'FIFO queue' if m == 'BFS' else 'LIFO stack'
-        frontier_box.info(f"Step {s}/{len(r['trace'])} · Current: {t['current']} · Depth: {t['depth']}\n\n**Frontier ({structure}):** {frontier_text}")
+        frontier_box.info(
+            f"Step {s}/{len(r['trace'])} · Current: {t['current']} · Depth: {t['depth']}\n\n"
+            f"**Frontier ({structure}):** {frontier_text}"
+        )
         if play:
+            st.session_state[step_key] = s
             time.sleep(st.session_state.speed)
 
 st.divider()
