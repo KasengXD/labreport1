@@ -344,4 +344,82 @@ for m, r in results.items():
 
     prev_col, info_col, next_col = st.columns([1, 1.25, 1])
     with prev_col:
-        st.button('◀ Previous', key=f'{m}_prev', disabled=current
+        st.button('◀ Previous', key=f'{m}_prev', disabled=current_step <= 1,
+                  on_click=change_step, args=(step_key, -1, len(r['trace'])), width='stretch')
+    with info_col:
+        step_label = st.empty()
+        step_label.markdown(f'<div style="text-align:center;padding-top:7px;font-weight:600">Step {current_step} of {len(r["trace"])}</div>',
+                            unsafe_allow_html=True)
+    with next_col:
+        st.button('Next ▶', key=f'{m}_next', disabled=current_step >= len(r['trace']),
+                  on_click=change_step, args=(step_key, 1, len(r['trace'])), width='stretch')
+
+    step = st.session_state[step_key]
+    play = st.button(f'▶ Autoplay {m}', key=f'play_{m}', width='stretch')
+    left, right = st.columns([1.2, 1])
+
+    with left:
+        graph_box, frontier_box, explanation_box = st.empty(), st.empty(), st.empty()
+    with right:
+        st.write('**Step trace**')
+        cols = ['step','current','visited','frontier','depth','parent']
+        st.dataframe(pd.DataFrame(r['trace'])[cols], hide_index=True, width='stretch')
+
+    for s in (range(1, len(r['trace'])+1) if play else [step]):
+        fig = draw_graph(r, s)
+        graph_box.pyplot(fig, use_container_width=True)
+        plt.close(fig)
+        t = r['trace'][s-1]
+        step_label.markdown(f'<div style="text-align:center;padding-top:7px;font-weight:600">Step {s} of {len(r["trace"])}</div>',
+                            unsafe_allow_html=True)
+        frontier_box.markdown(frontier_html(m, t['frontier']), unsafe_allow_html=True)
+        explanation_box.info(explain_step(r, s, goal))
+        if play:
+            st.session_state[step_key] = s
+            time.sleep(st.session_state.speed)
+
+    # Search tree view
+    with st.expander(f'🌳 {m} search tree view', expanded=False):
+        tree_col, details_col = st.columns([1.3, 1])
+        with tree_col:
+            tree_fig = draw_search_tree(r, goal)
+            if tree_fig:
+                st.pyplot(tree_fig, use_container_width=True)
+                plt.close(tree_fig)
+        with details_col:
+            st.write('**Node parent and depth**')
+            visited_nodes = set(r['order'])
+            tree_rows = [
+                {'Node':n, 'Parent':p if p is not None else 'Start',
+                 'Depth':r['depths'].get(n, 0),
+                 'Status':'Expanded' if n in visited_nodes else 'Frontier'}
+                for n, p in r['parents'].items()
+            ]
+            st.dataframe(pd.DataFrame(tree_rows), hide_index=True, width='stretch')
+
+
+# Original BFS vs DFS comparison table
+st.divider()
+if method == 'Both':
+    st.subheader('BFS vs DFS comparison')
+    bfs, dfs = results['BFS'], results['DFS']
+    rows = {
+        'Data structure':('FIFO queue','LIFO stack'),
+        'Expansion order':(' → '.join(bfs['order']),' → '.join(dfs['order'])),
+        'Expanded nodes':(bfs['explored'],dfs['explored']),
+        'Max frontier':(bfs['max_frontier'],dfs['max_frontier']),
+        'Deepest level':(max(bfs['depths'].values(), default=0),
+                         max(dfs['depths'].values(), default=0))
+    }
+    if goal:
+        rows['Goal path'] = (' → '.join(bfs['path']) or 'Not reachable',
+                             ' → '.join(dfs['path']) or 'Not reachable')
+        rows['Goal path edges'] = (len(bfs['path'])-1 if bfs['found'] else '—',
+                                   len(dfs['path'])-1 if dfs['found'] else '—')
+
+    st.dataframe(pd.DataFrame([(k,str(v[0]),str(v[1])) for k,v in rows.items()],
+                              columns=['Measure','BFS','DFS']),
+                 hide_index=True, width='stretch')
+
+    if goal and bfs['found'] and dfs['found'] and len(bfs['path']) < len(dfs['path']):
+        st.success(f'BFS found a shorter path to {goal} ({len(bfs["path"])-1} edges vs {len(dfs["path"])-1}), as expected for unweighted graphs.')
